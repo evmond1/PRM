@@ -1,14 +1,18 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext'; // Assuming AuthContext is in src/contexts
+import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
 
 const ProtectedRoute: React.FC = () => {
-  const authContext = useContext(AuthContext);
+  const { user, loading } = useAuth(); // Use the hook to get user and loading state
 
-  // Check if the context is available and if the user is authenticated
-  // You might need a more robust check based on your AuthContext implementation
-  // For now, we'll assume a simple check like authContext?.user exists
-  if (!authContext || !authContext.user) {
+  // While loading, you might want to show a loading indicator or null
+  // For now, we'll just wait for loading to finish before redirecting
+  if (loading) {
+    return null; // Or a loading spinner component
+  }
+
+  // Check if the user is authenticated
+  if (!user) {
     // Redirect to the login page if not authenticated
     return <Navigate to="/login" replace />;
   }
