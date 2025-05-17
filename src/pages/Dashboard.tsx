@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowUp, ArrowDown, DollarSign, Users, Package, ShoppingBag } from 'lucide-react';
 import { Tables } from '../lib/supabase';
+import { toast } from 'react-toastify'; // Import toast
 
 // Register ChartJS components
 ChartJS.register(
@@ -47,7 +48,10 @@ const Dashboard: React.FC = () => {
   // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
       try {
