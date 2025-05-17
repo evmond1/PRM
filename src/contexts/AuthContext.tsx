@@ -72,34 +72,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(null);
         }
 
-        // Set loading to false only after the first auth state change event
+        // Set loading to false after any auth state change event has been processed,
+        // but only after the initial load is handled.
+        // This ensures loading is true during sign-in/out transitions until the new state is set.
         if (!isInitialLoadHandled.current) {
-          console.log('AuthContext: First auth state change processed, setting loading to false.');
-          setLoading(false);
-          isInitialLoadHandled.current = true;
+           console.log('AuthContext: First auth state change processed, setting loading to false.');
+           isInitialLoadHandled.current = true;
+           setLoading(false); // Set loading to false after initial session check
         } else {
-           console.log('AuthContext: Subsequent auth state change processed.');
-           // For subsequent changes (login/logout), we might want to set loading true temporarily
-           // or handle it differently depending on desired UX. For now, keep it simple.
-           // If the event is SIGN_IN or SIGN_OUT, you might want to set loading true
-           // until the profile fetch/state update is complete.
-           if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
-             // You could add logic here to set loading true briefly
-             // and then false after state updates, but be careful with race conditions.
-             // The current logic relies on the initial load handling.
-           }
+           console.log('AuthContext: Subsequent auth state change processed, setting loading to false.');
+           // For subsequent changes (login/logout), set loading to false after state updates
+           setLoading(false);
         }
+
 
         console.log('AuthContext: onAuthStateChange finished.');
       }
     );
 
-    // If the listener fires immediately (which it should), loading will be set to false.
-    // However, as a fallback for potential edge cases or if the listener is delayed,
-    // we can add a timeout to ensure loading is eventually set to false.
-    // This is less ideal than relying on the listener, but adds robustness.
-    // Let's omit the timeout for now and rely on the listener's immediate fire.
-    // If issues persist, a timeout could be considered as a last resort fallback.
+    // Initial check in case the listener doesn't fire immediately (less common but safe)
+    // This is a fallback and should ideally be covered by the INITIAL_SESSION event
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isInitialLoadHandled.current && isMounted) {
+        console.log('AuthContext: getSession fallback check, session:', session);
+        setSession(session);
+        setUser(session?.user ?? null);
+        // Profile fetch for initial session is handled by the listener if user exists
+        setLoading(false);
+        isInitialLoadHandled.current = true;
+      }
+    });
+
 
     return () => {
       console.log('AuthContext: Cleaning up auth state change listener and setting isMounted to false');

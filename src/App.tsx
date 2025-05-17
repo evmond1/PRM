@@ -1,17 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { SettingsProvider } from './contexts/SettingsContext';
+// SettingsProvider is now imported and used inside AuthProtectedContent
 import AuthProtectedContent from './components/AuthProtectedContent'; // Import the new component
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <SettingsProvider>
-          {/* Render the new component that contains AuthStatusWaiter and AppRoutes */}
-          <AuthProtectedContent />
-        </SettingsProvider>
+        {/* SettingsProvider is now rendered inside AuthProtectedContent */}
+        <AuthProtectedContent />
       </AuthProvider>
     </Router>
   );

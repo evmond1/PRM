@@ -1,52 +1,35 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from './components/ProtectedRoute';
-import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Settings from './pages/Settings';
-import Notifications from './pages/Notifications';
-import NotFound from './pages/NotFound';
 import { useAuth } from './contexts/AuthContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard'; // Assuming you have a Dashboard page
+import NotFound from './pages/NotFound'; // Assuming you have a 404 page
 
-function AppRoutes() {
-  const { user, loading } = useAuth();
-
-  // AuthStatusWaiter handles the initial loading state before AppRoutes is rendered.
-  // So, by the time AppRoutes renders, 'loading' should be false.
-  // However, keeping the check here is harmless and provides a fallback.
-  if (loading) {
-    return null; // Or a loading spinner if AuthStatusWaiter wasn't used
-  }
+const AppRoutes: React.FC = () => {
+  const { user } = useAuth();
 
   return (
     <Routes>
       {/* Public Routes */}
-      {/* If user is logged in, redirect from login/signup to dashboard */}
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
-      <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <Signup />} />
-
-      {/* Root route - Redirect based on auth status */}
-      {/* If user is logged in, go to dashboard, otherwise go to login */}
-      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
+      <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <Register />} />
 
       {/* Protected Routes */}
-      {/* This route element uses ProtectedRoute to check auth */}
-      <Route element={<ProtectedRoute />}>
-        {/* Nested routes that require authentication */}
-        <Route element={<Layout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/notifications" element={<Notifications />} />
-          {/* Add other protected routes here */}
-        </Route>
-      </Route>
+      <Route
+        path="/dashboard"
+        element={user ? <Dashboard /> : <Navigate to="/login" replace />}
+      />
+      {/* Add other protected routes here */}
+      {/* <Route path="/settings" element={user ? <Settings /> : <Navigate to="/login" replace />} /> */}
 
-      {/* 404 Catch-all Route */}
+      {/* Redirect root to dashboard if logged in, otherwise to login */}
+      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
+
+      {/* 404 Not Found */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
-}
+};
 
 export default AppRoutes;
