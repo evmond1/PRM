@@ -1,24 +1,20 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
+import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute: React.FC = () => {
-  const { user, loading } = useAuth(); // Use the hook to get user and loading state
+  const { user, loading } = useAuth();
 
-  // While loading, you might want to show a loading indicator or null
-  // For now, we'll just wait for loading to finish before redirecting
+  // If still loading, don't render anything yet.
+  // AuthStatusWaiter should handle this before ProtectedRoute is reached,
+  // but this adds an extra layer of safety.
   if (loading) {
-    return null; // Or a loading spinner component
+    return null; // Or a loading indicator
   }
 
-  // Check if the user is authenticated
-  if (!user) {
-    // Redirect to the login page if not authenticated
-    return <Navigate to="/login" replace />;
-  }
-
-  // If authenticated, render the child routes
-  return <Outlet />;
+  // If user is authenticated, render the nested routes via Outlet
+  // Otherwise, redirect to the login page
+  return user ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
 export default ProtectedRoute;

@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export type Tables<T extends keyof Database['public']['Tables']> = 
+export type Tables<T extends keyof Database['public']['Tables']> =
   Database['public']['Tables'][T]['Row'];
 
 // This is a placeholder type - in a real project, you would generate these types
@@ -157,6 +157,30 @@ export interface Database {
           permissions: string[] | null;
           created_at: string;
           updated_at: string;
+        };
+      };
+      // Add the new app_settings table type
+      app_settings: {
+        Row: {
+          id: string;
+          app_name: string;
+          logo_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          app_name?: string;
+          logo_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          app_name?: string;
+          logo_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
     };

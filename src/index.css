@@ -17,6 +17,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  /* Use a subtle background color */
+  background-color: #f4f7f6; /* Light greyish blue */
 }
 
 /* Custom scrollbar */
@@ -26,14 +28,20 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #e0e0e0; /* Lighter track */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: #a0a0a0; /* Darker thumb */
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+  background: #808080; /* Even darker on hover */
+}
+
+/* Add some basic styles for focus states */
+*:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5); /* Blue focus ring */
 }
