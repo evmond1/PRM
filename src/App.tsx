@@ -10,11 +10,11 @@ import Vendors from './pages/Vendors';
 import Products from './pages/Products';
 import Deals from './pages/Deals';
 import Marketing from './pages/Marketing';
-import Training from './pages/Training'; // This import should now work
+import Training from './pages/Training';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import NotFound from './pages/NotFound';
+import NotFound from './pages/NotFound'; // Ensure this path and casing are correct
 
 // Components
 import Layout from './components/Layout';
