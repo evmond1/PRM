@@ -1,4 +1,3 @@
-
 import { Partner, Vendor, Product, Deal, MarketingCampaign, TrainingProgram, Notification, User } from '../types';
 
 export const partners: Partner[] = [
