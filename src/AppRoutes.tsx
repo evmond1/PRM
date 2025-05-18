@@ -3,8 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard'; // Assuming you have a Dashboard page
-import NotFound from './pages/NotFound'; // Assuming you have a 404 page
+import Dashboard from './pages/Dashboard';
+import NotFound from './pages/NotFound';
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();

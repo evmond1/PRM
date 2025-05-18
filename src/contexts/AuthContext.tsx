@@ -20,10 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null); // Use Profile type
-  const [loading, setLoading] = useState(true);
-
-  // Use a ref to track if the initial auth state has been processed
-  const isInitialLoadHandled = useRef(false);
+  const [loading, setLoading] = useState(true); // Start loading as true
 
   console.log('AuthContext: Initializing, loading:', loading);
 
@@ -72,42 +69,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(null);
         }
 
-        // Set loading to false after any auth state change event has been processed,
-        // but only after the initial load is handled.
-        // This ensures loading is true during sign-in/out transitions until the new state is set.
-        if (!isInitialLoadHandled.current) {
-           console.log('AuthContext: First auth state change processed, setting loading to false.');
-           isInitialLoadHandled.current = true;
-           setLoading(false); // Set loading to false after initial session check
-        } else {
-           console.log('AuthContext: Subsequent auth state change processed, setting loading to false.');
-           // For subsequent changes (login/logout), set loading to false after state updates
+        // Set loading to false specifically after the initial session event
+        if (_event === 'INITIAL_SESSION') {
+           console.log('AuthContext: INITIAL_SESSION processed, setting loading to false.');
+           setLoading(false);
+        } else if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
+           // For sign in/out, loading was set to true before the call.
+           // Set it back to false after the state updates are processed by the listener.
+           console.log(`AuthContext: ${_event} processed, setting loading to false.`);
            setLoading(false);
         }
+        // For other events like PASSWORD_RECOVERY, USER_UPDATED, etc., loading might not need changing
+        // or might be handled differently depending on flow. We focus on initial, sign_in, sign_out.
 
 
         console.log('AuthContext: onAuthStateChange finished.');
       }
     );
 
-    // Initial check in case the listener doesn't fire immediately (less common but safe)
-    // This is a fallback and should ideally be covered by the INITIAL_SESSION event
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isInitialLoadHandled.current && isMounted) {
-        console.log('AuthContext: getSession fallback check, session:', session);
-        setSession(session);
-        setUser(session?.user ?? null);
-        // Profile fetch for initial session is handled by the listener if user exists
-        setLoading(false);
-        isInitialLoadHandled.current = true;
-      }
-    });
-
+    // Add a timeout as a fallback in case the initial session event is missed or delayed
+    const loadingTimeout = setTimeout(() => {
+      console.log('AuthContext: Loading timeout reached. Checking if loading is still true...');
+      setLoading(prevLoading => {
+        if (prevLoading) {
+          console.log('AuthContext: Loading was still true after timeout, setting to false.');
+          return false;
+        }
+        console.log('AuthContext: Loading was already false after timeout.');
+        return prevLoading;
+      });
+    }, 1000); // Adjust timeout duration if needed (e.g., 500ms, 1000ms)
 
     return () => {
-      console.log('AuthContext: Cleaning up auth state change listener and setting isMounted to false');
+      console.log('AuthContext: Cleaning up auth state change listener and timeout, setting isMounted to false');
       isMounted = false; // Set flag to false on cleanup
       subscription?.unsubscribe();
+      clearTimeout(loadingTimeout); // Clear the timeout on cleanup
     };
   }, []); // Empty dependency array means this runs once on mount
 
@@ -119,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('AuthContext: signIn error:', error);
       setLoading(false); // Set loading to false if there's an immediate error
     } else {
-      console.log('AuthContext: signIn successful, waiting for onAuthStateChange');
+      console.log('AuthContext: signIn successful, waiting for onAuthStateChange (SIGNED_IN)');
       // onAuthStateChange listener will handle setting loading to false on success
     }
     return { error };
@@ -153,8 +150,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    // Don't set loading to false here as the auth state change will handle it on success
-    console.log('AuthContext: signUp finished, waiting for onAuthStateChange');
+    // Don't set loading to false here as the auth state change (SIGNED_IN) will handle it on success
+    console.log('AuthContext: signUp finished, waiting for onAuthStateChange (SIGNED_IN)');
     return { data, error };
   };
 
@@ -166,7 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('AuthContext: signOut error:', error);
       setLoading(false); // Set loading to false if there's an immediate error
     } else {
-      console.log('AuthContext: signOut successful, waiting for onAuthStateChange');
+      console.log('AuthContext: signOut successful, waiting for onAuthStateChange (SIGNED_OUT)');
       // onAuthStateChange listener will handle setting loading to false on success
     }
     return { error };

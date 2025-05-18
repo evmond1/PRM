@@ -1,23 +1,12 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import AppRoutes from '../AppRoutes'; // Assuming your routes are defined here
-import LoadingSpinner from './LoadingSpinner'; // Import the LoadingSpinner component
-import { SettingsProvider } from '../contexts/SettingsContext'; // Import SettingsProvider here
+// This component is no longer needed as its logic is moved to App.tsx
+// Keeping it here as a placeholder or for clarity that it's removed.
+// You can safely delete this file if it's not used elsewhere.
 
 const AuthProtectedContent: React.FC = () => {
-  const { user, loading } = useAuth();
-
-  // Show a loading spinner while the authentication status is being determined
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  // Once loading is false, render the main application routes wrapped in SettingsProvider
-  return (
-    <SettingsProvider>
-      <AppRoutes />
-    </SettingsProvider>
-  );
+  // This component is deprecated. The logic for waiting for auth
+  // and rendering routes is now handled directly in App.tsx
+  return null; // Or throw an error if this component is unexpectedly rendered
 };
 
 export default AuthProtectedContent;
