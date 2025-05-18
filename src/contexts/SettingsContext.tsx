@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase'; // Assuming supabase client is available
-import { Database } from '../lib/supabase'; // Import Database type
+import { supabase } from '../lib/supabase';
+import { Database } from '../lib/supabase';
 
 // Define the type for the app_settings table row
 type AppSettingsRow = Database['public']['Tables']['app_settings']['Row'];
@@ -41,27 +41,38 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setError(null);
 
       // Assuming settings are stored in a table, e.g., 'app_settings'
-      // and there's only one row or you fetch based on a specific key/ID
-      console.log('SettingsContext: Calling supabase.from("app_settings").select("*").single()...');
+      // Fetch using limit(1) instead of single() for potentially better handling of no rows
+      console.log('SettingsContext: Calling supabase.from("app_settings").select("*").limit(1)...');
+
       const { data, error } = await supabase
         .from('app_settings') // Replace with your actual settings table name
         .select('*')
-        .single(); // Assuming a single row for global settings
+        .limit(1); // Use limit(1)
+
+      console.log('SettingsContext: Supabase fetch finished.');
+      console.log('SettingsContext: Raw Data:', data);
+      console.log('SettingsContext: Raw Error:', error);
+
 
       if (!isMounted) {
         console.log('SettingsContext: Supabase fetch finished but component unmounted. Aborting state updates.');
         return; // Don't update state if component unmounted
       }
 
-      console.log('SettingsContext: Supabase fetch finished. Data:', data, 'Error:', error);
-
       if (error) {
         console.error('SettingsContext: Error fetching settings:', error);
         setError(error);
         setSettings(null); // Or set default settings if fetching fails
       } else {
-        console.log('SettingsContext: Settings fetched successfully:', data);
-        setSettings(data as AppSettings); // Cast data to AppSettings type
+        console.log('SettingsContext: Settings fetched successfully.');
+        // Handle the result which is now an array (even if it's just one item or empty)
+        if (data && data.length > 0) {
+          console.log('SettingsContext: Found settings data:', data[0]);
+          setSettings(data[0] as AppSettings); // Take the first item
+        } else {
+          console.log('SettingsContext: No settings data found.');
+          setSettings(null); // Or set default settings if no data
+        }
       }
 
       console.log('SettingsContext: fetchSettings finished, setting loading to false.');
