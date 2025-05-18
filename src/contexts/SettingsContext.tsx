@@ -17,6 +17,19 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+// Define a timeout duration (e.g., 15 seconds)
+const SETTINGS_FETCH_TIMEOUT = 15000; // 15 seconds
+
+// Define default settings to use as a fallback (keeping this for now, but focusing on fixing the fetch)
+const DEFAULT_APP_SETTINGS: AppSettings = {
+  id: 'default-settings-id', // Use a placeholder ID
+  app_name: 'Default App Name',
+  logo_url: null, // Or a default logo URL if available
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,43 +53,82 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(true);
       setError(null);
 
-      // Assuming settings are stored in a table, e.g., 'app_settings'
-      // Fetch using limit(1) instead of single() for potentially better handling of no rows
-      console.log('SettingsContext: Calling supabase.from("app_settings").select("*").limit(1)...');
+      // Create the Supabase fetch promise
+      console.log('SettingsContext: Creating Supabase fetch promise...');
+      const supabaseFetchPromise = supabase.from('app_settings').select('*').limit(1);
 
-      const { data, error } = await supabase
-        .from('app_settings') // Replace with your actual settings table name
-        .select('*')
-        .limit(1); // Use limit(1)
+      // Add logging to the Supabase fetch promise's outcome
+      const instrumentedSupabaseFetchPromise = supabaseFetchPromise
+        .then(result => {
+          console.log('SettingsContext: Supabase fetch promise RESOLVED.', result);
+          return result; // Pass the result along
+        })
+        .catch(err => {
+          console.error('SettingsContext: Supabase fetch promise REJECTED.', err);
+          throw err; // Re-throw the error so Promise.race catches it
+        });
 
-      console.log('SettingsContext: Supabase fetch finished.');
-      console.log('SettingsContext: Raw Data:', data);
-      console.log('SettingsContext: Raw Error:', error);
+
+      // Use a Promise.race to implement a timeout
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => {
+          console.log('SettingsContext: Timeout promise triggered.');
+          reject(new Error('Settings fetch timed out'));
+        }, SETTINGS_FETCH_TIMEOUT)
+      );
+
+      try {
+        console.log('SettingsContext: Racing Supabase fetch against timeout...');
+
+        // Race the instrumented Supabase fetch against the timeout
+        const { data, error: supabaseError } = await Promise.race([
+          instrumentedSupabaseFetchPromise,
+          timeoutPromise, // This will reject if timeout occurs first
+        ]);
+
+        console.log('SettingsContext: Await Promise.race finished.');
 
 
-      if (!isMounted) {
-        console.log('SettingsContext: Supabase fetch finished but component unmounted. Aborting state updates.');
-        return; // Don't update state if component unmounted
-      }
+        console.log('SettingsContext: Supabase fetch finished or timeout occurred.');
+        console.log('SettingsContext: Raw Data:', data);
+        console.log('SettingsContext: Raw Error:', supabaseError);
 
-      if (error) {
-        console.error('SettingsContext: Error fetching settings:', error);
-        setError(error);
-        setSettings(null); // Or set default settings if fetching fails
-      } else {
-        console.log('SettingsContext: Settings fetched successfully.');
-        // Handle the result which is now an array (even if it's just one item or empty)
-        if (data && data.length > 0) {
-          console.log('SettingsContext: Found settings data:', data[0]);
-          setSettings(data[0] as AppSettings); // Take the first item
+        if (!isMounted) {
+          console.log('SettingsContext: Supabase fetch finished but component unmounted. Aborting state updates.');
+          return; // Don't update state if component unmounted
+        }
+
+        if (supabaseError) {
+          console.error('SettingsContext: Error fetching settings:', supabaseError);
+          setError(supabaseError);
+          // Use default settings on Supabase error
+          setSettings(DEFAULT_APP_SETTINGS); // Still using fallback for now
         } else {
-          console.log('SettingsContext: No settings data found.');
-          setSettings(null); // Or set default settings if no data
+          console.log('SettingsContext: Settings fetched successfully.');
+          // Handle the result which is now an array (even if it's just one item or empty)
+          if (data && data.length > 0) {
+            console.log('SettingsContext: Found settings data:', data[0]);
+            setSettings(data[0] as AppSettings); // Take the first item
+          } else {
+            console.log('SettingsContext: No settings data found, using defaults.');
+            // Use default settings if no data is returned
+            setSettings(DEFAULT_APP_SETTINGS); // Still using fallback for now
+          }
+        }
+      } catch (timeoutError: any) {
+        // This catch block handles the timeout rejection
+        console.error('SettingsContext: Settings fetch timed out:', timeoutError.message);
+        if (isMounted) {
+           setError(timeoutError);
+           // Use default settings on timeout
+           setSettings(DEFAULT_APP_SETTINGS); // Still using fallback for now
+        }
+      } finally {
+        if (isMounted) {
+          console.log('SettingsContext: fetchSettings finished (or timed out), setting loading to false.');
+          setLoading(false);
         }
       }
-
-      console.log('SettingsContext: fetchSettings finished, setting loading to false.');
-      setLoading(false);
     };
 
     fetchSettings();
